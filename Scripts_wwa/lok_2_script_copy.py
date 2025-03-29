@@ -61,13 +61,15 @@ class lok2(jmri.jmrit.automat.AbstractAutomaton):
 
     def handle(self):
         # handle() is called repeatedly until it returns false.
-        """Sprawdź czy zwrotnice sa w odpowiednim polozeniu i ustaw na pozycje startowe
-        #2 dla CLOSED, #4 dla THROWN """
-        for turnout in TurnoutsList_BCD:
-            if turnout.getKnownState() == 2:
-                Kollib.zwrotnica_test(self, turnout)
 
         while True:
+
+            """Sprawdź czy zwrotnice sa w odpowiednim polozeniu i ustaw na pozycje startowe
+            #2 dla CLOSED, #4 dla THROWN """
+            for turnout in TurnoutsList_BCD:
+                if turnout.getKnownState() == 2:
+                    Kollib.zwrotnica_test(self, turnout)
+
             """Jedzie do tylu - wozek napedowy z tylu"""
             def backward_tram():
                 print("STATE: ", SensorsList1[0].state)
