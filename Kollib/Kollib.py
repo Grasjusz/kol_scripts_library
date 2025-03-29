@@ -94,9 +94,11 @@ def sc_station(self, vehicle,station,speed_multiplier):#sc->speed change
 
 def zwrotnica_test(self, zwrotnica):
     print "zwrotnica test:"
-    print(zwrotnica.getKnownState())
-    if zwrotnica.getKnownState() == 2:
-        print "zwrotnica:Pozycja 2"
-    if zwrotnica.getKnownState() == 4:
-        print "zwrotnica:Pozycja 4"
+    if zwrotnica.getKnownState() == 2 : #2 closed
+        zwrotnica.setState(4)
+        print(zwrotnica.getKnownState())
+    if zwrotnica.getKnownState() == 4: #4 thrown
+        zwrotnica.setState(2)
+        print(zwrotnica.getKnownState())
+
 
