@@ -55,8 +55,7 @@ class kolejka_test(jmri.jmrit.automat.AbstractAutomaton):
         Funkcja init() wywoływana jest jednorazowo na początku działania klasy.
         Służy do inicjalizacji zmiennych i konfiguracji systemu.
         """
-        print
-        "Inside init(self)"  # Informacja o rozpoczęciu procesu inicjalizacji
+        print "Inside init(self)"  # Informacja o rozpoczęciu procesu inicjalizacji
 
         # Pobranie sterowania dla lokomotywy o określonym adresie
         # Pierwszy argument to adres lokomotywy na dekoderze DCC
@@ -89,7 +88,7 @@ class kolejka_test(jmri.jmrit.automat.AbstractAutomaton):
         "End of Loop"  # Koniec cyklu pętli
         # Funkcja zwraca 1, dzięki czemu pętla automatyki będzie kontynuowana
         return 1
-
+dupa duap
 
 # Uruchomienie automatu
 kolejka_test().start()
