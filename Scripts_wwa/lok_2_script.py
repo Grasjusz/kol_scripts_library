@@ -250,7 +250,7 @@ class lok2(jmri.jmrit.automat.AbstractAutomaton):
                     print("Czujnik zajety: ", SensorsList2[6])
                     self.waitMsec(8000)
                     self.throttle2.setF2(True)# wlacz klakson w tunelu
-                    self.waitMsec(3000)
+                    self.waitMsec(4000)
                     self.throttle2.setF2(False)# wylacz klakson w tunelu
                     self.waitMsec(100)
                     self.waitSensorActive(SensorsList2[5])
