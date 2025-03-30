@@ -244,7 +244,7 @@ def sc_station(self, vehicle,station,speed_multiplier):#sc->speed change
     self.waitMsec(1000)
 
 def revers_turnouts(self, zwrotnica):
-    print "zwrotnica test:"
+    print "Zmiana położenia zwrotnicy"
     if zwrotnica.getKnownState() == 2 :
         zwrotnica.setState(4)
         self.waitMsec(100)
