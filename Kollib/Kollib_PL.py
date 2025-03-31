@@ -22,13 +22,17 @@ def stop_at_station(self, vehicle, station, delay):
     :return: None
     """
     # Oczekiwanie na aktywację czujnika stacji
+    print "stop_at_station:Wait for Sensor", station, vehicle
     self.waitSensorActive([station])
 
     # Zatrzymanie pojazdu
+    print "stop_at_station:Stop on Station", station, vehicle
     vehicle.setSpeedSetting(0)
     self.waitMsec(100)
-
+    vehicle.setSpeedSetting(0)
+    self.waitMsec(100)
     # Opóźnienie dla dodatkowego odczekania na stacji
+    print "stop_at_station:Delay"
     self.waitMsec(delay)
     self.waitMsec(500)
 
@@ -47,9 +51,10 @@ def drive_vehicle(self, vehicle, speed, is_forward):
     :return: None
     """
     # Ustawienie kierunku jazdy pojazdu
+    print "drive_vehicle:Set Loco Direction", vehicle, is_forward
     vehicle.setIsForward(is_forward)
     self.waitMsec(500)
-
+    print "drive_vehicle:Set Speed", vehicle, speed
     # Ustawienie prędkości
     vehicle.setSpeedSetting(speed)
     self.waitMsec(100)
@@ -68,14 +73,17 @@ def delay_stop(self, vehicle, station, delay):
     :return: None
     """
     # Czekanie na aktywację czujnika stacji
+    print "delay_stop:Wait for Sensor", station, vehicle
     self.waitSensorActive([station])
 
     # Opóźnienie przed zatrzymaniem
+    print "delay_stop:Delay"
     self.waitMsec(delay)
-
+    print "delay_stop:Stop"
     # Zatrzymanie pojazdu
     vehicle.setSpeedSetting(0)
     self.waitMsec(100)
+    vehicle.setSpeedSetting(0)
 
 
 def speed_change(self, vehicle, speed_multiplier):
