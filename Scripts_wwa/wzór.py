@@ -3,7 +3,7 @@ import jmri
 import sys
 
 # Dodajemy ścieżkę do katalogu z plikiem Kollib.py, który zawiera autorskie funkcje pomocnicze.
-sys.path.append(r'C:\Users\LOK_7\JMRI\My_JMRI_Railroad.jmri\MyScrypt')
+sys.path.append(r"C:\Users\LOK_7\JMRI\My_JMRI_Railroad.jmri\MyScrypt ")
 import Kollib  # Import biblioteki użytkownika z dodatkowymi funkcjami
 
 # Sekwencyjne przypisywanie adresów sensorów
@@ -84,6 +84,7 @@ class kolejka_test(jmri.jmrit.automat.AbstractAutomaton):
         print
         "Tramwaj_1"
         self.Lokomtywa_1.setSpeedSetting(0)  # Ustawienie prędkości lokomotywy na 0 (zatrzymanie)
+
 
         print
         "End of Loop"  # Koniec cyklu pętli
