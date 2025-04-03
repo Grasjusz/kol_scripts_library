@@ -3,7 +3,7 @@ import jmri
 import sys, os
 
 # Dodaj ścieżke do katalogu, w którym znajduje sie biblioteka Kollib.py
-sys.path.append(os.path.join(sys.path[0]))
+sys.path.append(os.path.join(sys.path[0])) #szuka biblioteczki w tym samym folderze w ktorym jest uruchamiany skrypt
 import Kollib #Biblioteka autorskich funkcji
 
 #Sekwencyjne przypisywanie adresów sensorą - trasa tramwaj
@@ -13,6 +13,13 @@ SensorsList1 = []
 for i in range(FirstSensorAdress, FirstSensorAdress + NumberOfSensors):
     SensorsList1.append(sensors.getSensor("LS"+str(i+1)))
 print("Sensor List 1:", SensorsList1)
+
+#Wywolaj czujniki jako nieaktywne by je wzbudzić
+def activate_sensors(sensors_list):
+    for sensor in sensors_list:
+        sensor.setState(INACTIVE)
+
+activate_sensors(SensorsList1)
 
 '''
 Jeśli czujniki nie są ułożone w sekwencji, możesz dodać je jako Sensor1 = sensors.getSensor("LS1") lub
@@ -32,15 +39,21 @@ class Lok1(jmri.jmrit.automat.AbstractAutomaton):
         # init() is called exactly once at the beginning to do
         # any necessary configuration.
         print("Inside init(self)")
+        print("Program tramwaj burza uruchomiony...  Czekam na sensor IS1.. ze skryptu startup..")
+        self.waitMsec(3000)
+        """Sensor wirtualny uruchamiajacy makiete - czekam na odpowiedz z startup_script.py"""
+        self.startup_sensor = sensors.getSensor("IS1")  # Pozycja startowa tramwaj burza
+        self.waitSensorActive([self.startup_sensor])
+
         # get loco address. For long address change "False" to "True"
-        self.throttle1 = self.getThrottle(6, False) #Tramwaj
+        self.throttle1 = self.getThrottle(10, False) #Tramwaj
         return
 
     def handle(self):
         # handle() is called repeatedly until it returns false.
         print("Inside handle(self)")
 
-        speed_global = 0.4 # Ustawiamy jedną zmienna główną prędkosc
+        speed_global = 0.4 # Ustawiamy jedną zmienna glowna prędkosc
 
         """Funkcja uruchomieniowa - awaryjny dojazd do stacji startowej jezeli pociag na niej sie nie znajduje
         co okolo sekunde uzywa sygnalu dziekowego - jezeli na niej sie znajduje - trabi 3 razy po 2 sekundy"""
@@ -85,6 +98,17 @@ class Lok1(jmri.jmrit.automat.AbstractAutomaton):
             drive_to_start_station()
 
         while True:
+            def check_stop():
+                """Sensor wirtualny zatrzymujacy lub uruchamiajacy z powrotem makiete"""
+                self.startup_sensor = sensors.getSensor("IS1")  # Pozycja startowa tramwaj burza
+                suspend = self.waitSensorActive([self.startup_sensor])
+
+                if suspend == ACTIVE:
+                    pass
+                elif suspend != ACTIVE:
+                    print("Pociagi zatrzymane LOK_1_burza")
+                    Kollib.drive_vehicle(self, self.throttle1, 0, True)
+                return
 
             def driving_loop():
                 """Jedzie do przodu - wozek napedowy z przodu"""
@@ -209,8 +233,10 @@ class Lok1(jmri.jmrit.automat.AbstractAutomaton):
                 self.waitMsec(100)
                 self.throttle1.setF1(False)  # wylacz dzwiek silnika
                 self.waitMsec(6000)
-                print("KONIEC PETLI, ROZPOCZNIJ NOWA")
+                print("KONIEC PETLI, ROZPOCZYNAM NOWA LOK_1_BURZA")
+                return
 
+            check_stop()
             driving_loop()
 
 

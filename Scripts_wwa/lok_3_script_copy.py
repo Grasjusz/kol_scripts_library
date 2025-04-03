@@ -3,7 +3,7 @@ import jmri
 import sys, os
 
 # Dodaj ścieżke do katalogu, w którym znajduje sie biblioteka Kollib.py
-sys.path.append(os.path.join(sys.path[0]))
+sys.path.append(os.path.join(sys.path[0])) #szuka biblioteczki w tym samym folderze w ktorym jest uruchamiany skrypt
 import Kollib #Biblioteka autorskich funkcji
 
 #Sekwencyjne przypisywanie adresów sensorą - trasa tramwaj
@@ -13,6 +13,13 @@ SensorsList1 = []
 for i in range(FirstSensorAdress, FirstSensorAdress + NumberOfSensors):
     SensorsList1.append(sensors.getSensor("LS"+str(i+1)))
 print("Sensor List 1:", SensorsList1)
+
+#Wywolaj czujniki jako nieaktywne by je wzbudzić
+def activate_sensors(sensors_list):
+    for sensor in sensors_list:
+        sensor.setState(INACTIVE)
+
+activate_sensors(SensorsList1)
 
 FirstTurnoutAdress = 104
 NumberOfTurnouts = 2
@@ -33,28 +40,65 @@ odnoszaca sie do tego czujnika.
 '''
 
 
-class lok3(jmri.jmrit.automat.AbstractAutomaton):
+class Lok3(jmri.jmrit.automat.AbstractAutomaton):
     def init(self):
         # init() is called exactly once at the beginning to do
         # any necessary configuration.
+
         print("Inside init(self)")
+        print("Program tramwaj wisla uruchomiony...  Czekam na sensor IS3.. ze skryptu startup..")
+        self.waitMsec(6000)
+        """Sensor wirtualny uruchamiajacy makiete - czekam na odpowiedz z startup_script.py"""
+        self.startup_sensor = sensors.getSensor("IS3")  # Pozycja startowa tramwaj wisla
+        self.waitSensorActive([self.startup_sensor])
+
         # get loco address. For long address change "False" to "True"
-        self.throttle1 = self.getThrottle(6, False) #Tramwaj
-        #self.throttle2 = self.getThrottle(6, False) #BR80, towarowy
+        self.throttle1 = self.getThrottle(11, False) #Tramwaj
+        #self.throttle2 = self.getThrottle(11, False) #Tramwaj 2
         return
 
     def handle(self):
+
+        speed_global = 0.4 # Ustawiamy jedną zmienna główną prędkosc
+
         # handle() is called repeatedly until it returns false.
         print("Inside handle(self)")
-        """Sprawdź czy zwrotnice sa w odpowiednim polozeniu i ustaw na pozycje startowe"""
-        # 2 dla CLOSED, #4 dla THROWN
-        TurnoutsList_BCD[0].setState(4)
-        self.waitMsec(1000)
-        print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
-        TurnoutsList_BCD[1].setState(4)
-        self.waitMsec(1000)
-        print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1],  TurnoutsList_BCD[0].getKnownState())
+
+        def turnouts_initial_positions():
+            """Sprawdź czy zwrotnice sa w odpowiednim polozeniu i ustaw na pozycje startowe"""
+            """#2 dla CLOSED, #4 dla THROW"""
+
+            if TurnoutsList_BCD[0].getKnownState() == 2:
+                TurnoutsList_BCD[0].setState(4)
+                self.waitMsec(1000)
+                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
+
+            elif TurnoutsList_BCD[1].getKnownState() == 2:
+                TurnoutsList_BCD[1].setState(4)
+                self.waitMsec(1000)
+                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[1].getKnownState())
+
+            else:
+                TurnoutsList_BCD[0].setState(4)
+                self.waitMsec(1000)
+                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
+                TurnoutsList_BCD[1].setState(4)
+                self.waitMsec(1000)
+                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[1].getKnownState())
+            return 0
+
         while True:
+            def check_stop():
+                """Sensor wirtualny zatrzymujacy lub uruchamiajacy z powrotem makiete"""
+                self.startup_sensor = sensors.getSensor("IS3")  # Pozycja startowa tramwaj wisla
+                suspend = self.waitSensorActive([self.startup_sensor])
+
+                if suspend == ACTIVE:
+                    pass
+                elif suspend != ACTIVE:
+                    print("Pociagi zatrzymane LOK_3_wisla")
+                    Kollib.drive_vehicle(self, self.throttle1, 0, True)
+                return
 
             """Jedzie do przodu - wozek napedowy z przodu"""
             def forward_train():
@@ -79,22 +123,18 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False) # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, True)
-                    self.waitMsec(2000)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, True)
+                    self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[1])
                     print("Czujnik zajety: ", SensorsList1[1])
                     self.waitMsec(100)
-                    Kollib.speed_change(self, self.throttle1, 0.9)
-                    self.waitMsec(2000)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(2000)
+
                     self.waitSensorActive(SensorsList1[2])
                     print("Czujnik zajety: ", SensorsList1[2])
                     self.waitMsec(100)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(100)
                     print("Zatrzymanie na stacji 2 FORWARD")
-                    Kollib.delay_stop(self, self.throttle1, SensorsList1[2], 5000)
+                    Kollib.delay_stop(self, self.throttle1, SensorsList1[2], 3000)
                     Kollib.stop_at_station(self, self.throttle1, SensorsList1[2], 6000)
                     print("Start ze stacji 2 FORWARD")
                     self.throttle1.setF4(True) # Wlacz dzwonek przed ruszeniem
@@ -105,20 +145,12 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False) # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, True)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, True)
                     self.waitMsec(500)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitSensorActive(SensorsList1[3])
-                    print("Czujnik zajety: ", SensorsList1[3])
-                    Kollib.speed_change(self, self.throttle1, 0.8)
-                    self.waitMsec(500)
-                    Kollib.speed_change(self, self.throttle1, 0.8)
+
                     self.waitSensorActive(SensorsList1[4])
                     print("Czujnik zajety: ", SensorsList1[4])
                     self.waitMsec(100)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(500)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
                     print("Zatrzymanie na stacji 3 FORWARD")
                     Kollib.delay_stop(self, self.throttle1, SensorsList1[4], 1000)
                     Kollib.stop_at_station(self, self.throttle1, SensorsList1[4], 6000)
@@ -131,19 +163,11 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False) # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, True)
-                    self.waitMsec(1000)
-                    Kollib.speed_change(self, self.throttle1, 0.9)
-                    self.waitMsec(1000)
-                    Kollib.speed_change(self, self.throttle1, 0.8)
-                    self.waitMsec(1000)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, True)
+                    self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[7])
                     print("Czujnik zajety: ", SensorsList1[7])
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(1000)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(500)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
                     print("Zatrzymanie na stacji 4 FORWARD")
                     Kollib.delay_stop(self, self.throttle1, SensorsList1[7], 2500)
                     Kollib.stop_at_station(self, self.throttle1, SensorsList1[7], 6000)
@@ -156,31 +180,33 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False) # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.3, True)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, True)
+                    Kollib.speed_change(self, self.throttle1, 0.5) #zmiana predkosci
                     self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[8])
                     print("Czujnik zajety: ", SensorsList1[8])
-                    Kollib.speed_change(self, self.throttle1, 1.8)
                     self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[10])
                     print("Czujnik zajety: ", SensorsList1[10])
-                    Kollib.speed_change(self, self.throttle1, 0.4)
-                    self.waitMsec(1000)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(1000)
+                    Kollib.speed_change(self, self.throttle1, 0.5) #zmiana predkosci
+                    self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[9])
                     print("Czujnik zajety: ", SensorsList1[9])
                     print("Zatrzymanie na stacji 5 FORWARD")
-                    Kollib.delay_stop(self, self.throttle1, SensorsList1[9], 800)
+                    Kollib.delay_stop(self, self.throttle1, SensorsList1[9], 1500)
                     Kollib.stop_at_station(self, self.throttle1, SensorsList1[9], 6000)
                     print("Stacja KONCOWA - stacja 5 BACKWARD")
                     self.throttle1.setF0(False) # Zgaś światła
                     self.waitMsec(100)
                     self.throttle1.setF1(False) #wylacz dzwiek silnika
                     self.waitMsec(8000)
-                    print("Koniec funkcji forward_train")
+                    print("Koniec wahadla jazda do przodu TRAM WISLA")
                     return 0
 
+            """Jedzie do tylu - wozek napedowy z przodu"""
             def backward_train():
                 print("STATE: ", SensorsList1[0].state)
                 print("Inside handle(backward_train)")
@@ -203,18 +229,18 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False) # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, False)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, False)
                     self.waitMsec(4000)
+
                     self.waitSensorActive(SensorsList1[10])
                     print("Czujnik zajety: ", SensorsList1[10])
                     self.waitMsec(100)
-                    Kollib.speed_change(self, self.throttle1, 0.9)
-                    self.waitMsec(2000)
-                    Kollib.speed_change(self, self.throttle1, 0.8)
+
                     self.waitSensorActive(SensorsList1[8])
                     print("Czujnik zajety: ", SensorsList1[8])
-                    Kollib.speed_change(self, self.throttle1, 0.7)
-                    self.waitMsec(500)
+                    Kollib.speed_change(self, self.throttle1, 0.5) #zmiana predkosci
+                    self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[7])
                     print("Czujnik zajety: ", SensorsList1[7])
                     print("Zatrzymanie na stacji 4 BACKWARD")
@@ -229,12 +255,14 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False)  # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, False)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, False)
+
                     self.waitSensorActive(SensorsList1[4])
                     print("Czujnik zajety: ", SensorsList1[4])
                     self.waitMsec(100)
-                    Kollib.speed_change(self, self.throttle1, 0.5)
+                    Kollib.speed_change(self, self.throttle1, 0.5) #zmiana predkosci
                     self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[3])
                     print("Czujnik zajety: ", SensorsList1[3])
                     self.waitMsec(100)
@@ -250,14 +278,12 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False)  # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, False)
-                    self.waitMsec(6000)
-                    Kollib.speed_change(self, self.throttle1, 0.9)
-                    self.waitMsec(2000)
-                    Kollib.speed_change(self, self.throttle1, 0.7)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, False)
+                    self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[2])
                     print("Czujnik zajety: ", SensorsList1[2])
-                    Kollib.speed_change(self, self.throttle1, 0.5)
+                    Kollib.speed_change(self, self.throttle1, 0.5) #zmiana predosci
                     print("Zatrzymanie na stacji 2 BACKWARD")
                     Kollib.delay_stop(self, self.throttle1, SensorsList1[2], 3000)
                     Kollib.stop_at_station(self, self.throttle1, SensorsList1[2], 6000)
@@ -270,11 +296,13 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(1000)
                     self.throttle1.setF2(False)  # Wylacz trabnij przed ruszeniem
                     self.waitMsec(100)
-                    Kollib.drive_vehicle(self, self.throttle1, 0.5, False)
+                    Kollib.drive_vehicle(self, self.throttle1, speed_global, False)
+
                     self.waitSensorActive(SensorsList1[1])
                     print("Czujnik zajety: ", SensorsList1[1])
                     Kollib.speed_change(self, self.throttle1, 0.5)
                     self.waitMsec(100)
+
                     self.waitSensorActive(SensorsList1[0])
                     print("Czujnik zajety: ", SensorsList1[0])
                     print("Zatrzymanie na stacji 1 BACKWARD")
@@ -285,16 +313,21 @@ class lok3(jmri.jmrit.automat.AbstractAutomaton):
                     self.waitMsec(100)
                     self.throttle1.setF1(False)  # wylacz dzwiek silnika
                     self.waitMsec(10000)
+                    print("Koniec wahadla jazda do tylu TRAM WISLA")
                     return 0
 
             """Uruchom odpowiednia funkcje zalezna od tego na ktorym torze krancowym sie znajduje"""
             if SensorsList1[0].state == ACTIVE:
-                print("Uruchamian funkcje forward_train")
+                print("Sprawdz czy pauza..")
+                check_stop()
+                print("Uruchamiam funkcje forward_train - TRAM WISLA")
+                turnouts_initial_positions()
                 forward_train()
             elif SensorsList1[9].state == ACTIVE:
-                print("Uruchamian funkcje backward_train")
+                print("Uruchamiam funkcje backward_train - TRAM WISLA")
+                turnouts_initial_positions()
                 backward_train()
 
 
-lok3().start()
+Lok3().start()
 

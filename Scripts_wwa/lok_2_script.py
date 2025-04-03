@@ -2,10 +2,10 @@ import jarray
 import jmri
 import sys, os
 # Dodaj ścieżke do katalogu, w którym znajduje sie biblioteka Kollib.py
-sys.path.append(os.path.join(sys.path[0]))
+sys.path.append(os.path.join(sys.path[0])) #szuka biblioteczki w tym samym folderze w ktorym jest uruchamiany skrypt
 import Kollib #Biblioteka autorskich funkcji
-#Sekwencyjne przypisywanie adresów sensorą - trasa tramwaj
 
+#Sekwencyjne przypisywanie adresów sensorą - trasa pociag osobowy
 FirstSensorAdress = 16
 NumberOfSensors = 6
 SensorsList1 = []
@@ -13,7 +13,14 @@ for i in range(FirstSensorAdress, FirstSensorAdress + NumberOfSensors):
     SensorsList1.append(sensors.getSensor("LS"+str(i+1)))
 print("Sensor List 1:", SensorsList1)
 
-#Sekwencyjne przypisywanie adresów sensorą - trasa br80 towarowa
+#Wywolaj czujniki jako nieaktywne by je wzbudzić
+def activate_sensors(sensors_list):
+    for sensor in sensors_list:
+        sensor.setState(INACTIVE)
+
+activate_sensors(SensorsList1)
+
+#Sekwencyjne przypisywanie adresów sensorą - trasa V20 towarowa
 FirstSensorAdress = 22
 NumberOfSensors = 9
 SensorsList2 = []
@@ -21,18 +28,24 @@ for i in range(FirstSensorAdress, FirstSensorAdress + NumberOfSensors):
     SensorsList2.append(sensors.getSensor("LS"+str(i+1)))
 print("Sensor List 2:", SensorsList2)
 
-#Reczne przypisywanie adresów sensorą
+#Wywolaj czujniki jako nieaktywne by je wzbudzić
+def activate_sensors(sensors_list):
+    for sensor in sensors_list:
+        sensor.setState(INACTIVE)
+
+activate_sensors(SensorsList2)
+
+#Reczne przypisywanie adresów sensorą - zatoczka
 Sensor32 = sensors.getSensor("LS32") #Mijanka/zatoczka na tramwaju
 print("Sensor mijanka/wahadlo:", Sensor32)
 
+#Sekwencyjne przypisywanie adresów zwrotnic
 FirstTurnoutAdress = 100
 NumberOfTurnouts = 4
 TurnoutsList_BCD = []
 for i in range(FirstTurnoutAdress, FirstTurnoutAdress + NumberOfTurnouts):
     TurnoutsList_BCD.append(turnouts.getTurnout("LT"+str(i)))
 print(TurnoutsList_BCD)
-
-
 
 '''
 Jeśli czujniki nie są ułożone w sekwencji, możesz dodać je jako Sensor1 = sensors.getSensor("LS1") lub
@@ -52,37 +65,79 @@ class Lok2(jmri.jmrit.automat.AbstractAutomaton):
         # init() is called exactly once at the beginning to do
         # any necessary configuration.
         print("Inside init(self)")
+        print("Program wawa wilenska uruchomiony...  Czekam na sensor IS5 i IS6 ze skryptu startup..")
+        self.waitMsec(6000)
+        """Sensor wirtualny uruchamiajacy makiete - czekam na odpowiedz z startup_script.py"""
+        self.startup_sensor_1 = sensors.getSensor("IS5")  # Pozycja startowa pociag pasazerski
+        self.startup_sensor_2 = sensors.getSensor("IS6")  # Pozycja startowa pociag towarowy
+        self.waitSensorActive([self.startup_sensor_1])
+        self.waitSensorActive([self.startup_sensor_2])
+
 
         # get loco address. For long address change "False" to "True"
         self.throttle1 = self.getThrottle(3, False) #Tramwaj
-        self.throttle2 = self.getThrottle(6, False) #BR80, towarowy
+        self.throttle2 = self.getThrottle(6, False) #V20, towarowy
 
     def handle(self):
         # handle() is called repeatedly until it returns false.
         print("Inside handle(self)")
 
-        print("SPRAWDZ CZY POCIAGI STOJA NA CZUJNIKACH!!!")
-        print("Jezeli nie - zresetuj program i wlacz funkcje na koniec dnia!")
-
         while True:
+
+            def check_stop():
+                """Sensor wirtualny zatrzymujacy lub uruchamiajacy z powrotem makiete"""
+                self.startup_sensor_1 = sensors.getSensor("IS5")  # Pozycja startowa pociag osobowy
+                self.startup_sensor_2 = sensors.getSensor("IS6")  # Pozycja startowa pociag towarowy
+
+                suspend_1 = self.waitSensorActive([self.startup_sensor_1])
+                suspend_2 = self.waitSensorActive([self.startup_sensor_2])
+
+                if suspend_1 == ACTIVE and suspend_2 == ACTIVE:
+                    pass #kontynuuj program
+                elif suspend_1 != ACTIVE and suspend_2 != ACTIVE:
+                    print("Pociagi zatrzymane LOK_2_wilenska")
+                    Kollib.drive_vehicle(self, self.throttle1, 0, True) #zatrzymaj pociag osobowy i czekaj na zmiane sygnalu
+                    Kollib.drive_vehicle(self, self.throttle2, 0, True) #zatrzymaj pociag towarowy i czekaj na zmiane sygnalu
+                return
 
             def turnouts_initial_positions():
                 """Sprawdz czy zwrotnice sa w odpowiednim polozeniu i ustaw na pozycje startowe"""
-                #2 dla CLOSED, #4 dla THROWN
+                """#2 dla CLOSED, #4 dla THROW"""
+                if TurnoutsList_BCD[0].getKnownState() == 2:
+                    TurnoutsList_BCD[0].setState(4)
+                    self.waitMsec(1000)
+                    print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
+
+                elif TurnoutsList_BCD[1].getKnownState() == 2:
+                    TurnoutsList_BCD[1].setState(4)
+                    self.waitMsec(1000)
+                    print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[1].getKnownState())
+
+                elif TurnoutsList_BCD[2].getKnownState() == 2:
+                    TurnoutsList_BCD[2].setState(4)
+                    self.waitMsec(1000)
+                    print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[2], TurnoutsList_BCD[2].getKnownState())
+
+                elif TurnoutsList_BCD[3].getKnownState() == 2:
+                    TurnoutsList_BCD[3].setState(4)
+                    self.waitMsec(1000)
+                    print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[3], TurnoutsList_BCD[3].getKnownState())
+
                 TurnoutsList_BCD[0].setState(4)
                 self.waitMsec(1000)
                 print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
                 TurnoutsList_BCD[1].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:",TurnoutsList_BCD[1], TurnoutsList_BCD[0].getKnownState())
+                print("Przestawiam zwrotnice na THROWN:",TurnoutsList_BCD[1], TurnoutsList_BCD[1].getKnownState())
                 TurnoutsList_BCD[2].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:",TurnoutsList_BCD[2], TurnoutsList_BCD[0].getKnownState())
+                print("Przestawiam zwrotnice na THROWN:",TurnoutsList_BCD[2], TurnoutsList_BCD[2].getKnownState())
                 TurnoutsList_BCD[3].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:",TurnoutsList_BCD[3], TurnoutsList_BCD[0].getKnownState())
+                print("Przestawiam zwrotnice na THROWN:",TurnoutsList_BCD[3], TurnoutsList_BCD[3].getKnownState())
+                return 0
 
-            """Jedzie do tylu - wozek napedowy z tylu"""
+            """Jedzie do tylu - wozek napedowy z przodu"""
             def backward_tram():
                 print("STATE: ", SensorsList1[0].state)
                 print("Inside handle(backward_tram)")
@@ -308,6 +363,8 @@ class Lok2(jmri.jmrit.automat.AbstractAutomaton):
 
             """Uruchom odpowiednia funkcje zalezna od tego na ktorym torze krancowym sie znajduje"""
             if SensorsList1[0].state == ACTIVE and SensorsList2[8].state == ACTIVE:
+                print("Sprawdz czy pauza..")
+                check_stop()
                 print("Uruchamiam funkcje resetujaca zwrotnice")
                 turnouts_initial_positions()
                 print("Uruchamiam funkcje backward_tram")
@@ -315,7 +372,7 @@ class Lok2(jmri.jmrit.automat.AbstractAutomaton):
             elif SensorsList1[4].state == ACTIVE and SensorsList2[4].state == ACTIVE:
                 print("Uruchamiam funkcje resetująca zwrotnice")
                 turnouts_initial_positions()
-                print("Uruchamian funkcje forward_tram")
+                print("Uruchamiam funkcje forward_tram")
                 forward_tram()
 
 
