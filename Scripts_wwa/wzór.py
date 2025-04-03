@@ -4,7 +4,6 @@ import sys
 
 # Dodajemy ścieżkę do katalogu z plikiem Kollib.py, który zawiera autorskie funkcje pomocnicze.
 sys.path.append(r"C:\Users\LOK_7\JMRI\My_JMRI_Railroad.jmri\MyScrypt ")
-import Kollib  # Import biblioteki użytkownika z dodatkowymi funkcjami
 
 # Sekwencyjne przypisywanie adresów sensorów
 FirstSensorAdress = x  # Początkowy adres pierwszego sensora (x)

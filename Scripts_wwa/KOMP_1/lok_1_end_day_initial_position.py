@@ -58,7 +58,7 @@ class Lok1EndDay(jmri.jmrit.automat.AbstractAutomaton):
                 self.waitMsec(100)
                 if SensorsList1[0].state == ACTIVE:
                     if SensorsList1[1].state != ACTIVE:
-                        Kollib.drive_vehicle(self, self.throttle1, 0.0,True)
+                        Kollib.drive_vehicle(self, self.throttle1, 0.0, True)
                         print("INSIDE DRIVE TO STATION - train arrived to station - end of loop")
                         self.throttle1.setF1(False)  # wylacz dzwiek silnika
                         self.throttle1.setF2(True)  # run make some noise
@@ -82,6 +82,7 @@ class Lok1EndDay(jmri.jmrit.automat.AbstractAutomaton):
                 print("Pociag nie na stacji startowej - uruchamiam funkcje jedz do stacji startowej")
                 drive_to_start_station()
                 print("Pociag na stacji startowej - Koncze skrypt")
+                self.waitMsec(5000)
                 return 0 
         else:
             if SensorsList1[0].state == ACTIVE:
@@ -100,11 +101,10 @@ class Lok1EndDay(jmri.jmrit.automat.AbstractAutomaton):
                     self.throttle1.setF2(True)  # run make some noise
                     self.waitMsec(2000)
                     self.throttle1.setF2(False)  # end make some noise
-                    self.waitMsec(100)
                     self.waitMsec(10000)
-                    pass
+                    return 0
             return 0
-
+        return 0
 
 Lok1EndDay().start()
 

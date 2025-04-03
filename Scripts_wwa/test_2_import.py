@@ -3,7 +3,7 @@ import jmri
 import sys, os
 #Pobiera relatywną ścieżkę do skryptu (czyli przeszukuje katalog główny w ktorym jest uruchamiany skrypt)
 sys.path.append(os.path.join(sys.path[0]))
-import Kollib #Biblioteka autorskich funkcji
+from Scripts_wwa.KOMP_1 import Kollib
 
 #Sekwencyjne przypisywanie adresów sensorą 
 FirstSensorAdress = 9 #Wpisz numer pierwszego czujnika danej sekcji
@@ -49,9 +49,9 @@ def handle(self):
     Kollib.stop_at_station(self, SensorsList[26], 5000)
     Kollib.drive_vehicle(self, 0.3, False)
     Kollib.sc_station(self, SensorsList[27], 1.5)
-    Kollib.stop_at_station(self,SensorsList[29], 1000)
+    Kollib.stop_at_station(self, SensorsList[29], 1000)
     Kollib.drive_vehicle(self, 0.4, True)
-    Kollib.delay_stop(self, SensorsList[28],20000)
+    Kollib.delay_stop(self, SensorsList[28], 20000)
     Kollib.drive_vehicle(self, 0.3, False)
     Kollib.stop_at_station(self, SensorsList[29], 5000)
     self.throttle.setF1(False)
