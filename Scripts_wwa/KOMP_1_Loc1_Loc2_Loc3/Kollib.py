@@ -18,9 +18,9 @@ def stop_at_station(self, vehicle, station, delay):
     :return: None
     """
     self.waitSensorActive([station])
-    print "stop_at_station:Stop on Station"
+    #print "stop_at_station:Stop on Station"
     vehicle.setSpeedSetting(0)# Stop the vehicle
-    print "stop_at_station:Delay"
+    #print "stop_at_station:Delay"
     self.waitMsec(delay)
 
 
@@ -37,11 +37,11 @@ def drive_vehicle(self, vehicle, speed, is_forward):
     :return: None
     """
     # set loco to forward
-    print "drive_vehicle:Set Loco Forward"
+    #print "drive_vehicle:Set Loco Forward"
     vehicle.setIsForward(is_forward)
     # wait 1 second for layout to catch up, then set speed
     self.waitMsec(1000)
-    print "drive_vehicle:Set Speed1"
+    #print "drive_vehicle:Set Speed1"
     vehicle.setSpeedSetting(speed)
 
 def delay_stop(self, vehicle,station,delay):
@@ -55,17 +55,17 @@ def delay_stop(self, vehicle,station,delay):
     :return: None
     """
 
-    print "delay_stop:White for sensor"
+    #print "delay_stop:White for sensor"
     self.waitSensorActive([station])
-    print "delay_stop:White to stop"
+    #print "delay_stop:White to stop"
     self.waitMsec(delay)
-    print "delay_stop:Stop"
+    #print "delay_stop:Stop"
     vehicle.setSpeedSetting(0)
     self.waitMsec(1000)
 
 
 def speed_change(self, vehicle, speed_multiplier):
-    print "speed_change:Changing speed"
+    #print "speed_change:Changing speed"
     curent_speed=vehicle.getSpeedSetting()
     self.waitMsec(500)
     vehicle.setSpeedSetting(curent_speed * speed_multiplier)
@@ -85,15 +85,15 @@ def sc_station(self, vehicle,station,speed_multiplier):#sc->speed change
     :return: None
     """
     vehicle.waitSensorActive([station])
-    print "sc_station:White for sensor"
+    #print "sc_station:White for sensor"
     curent_speed=vehicle.getSpeedSetting()
     self.waitMsec(500)
-    print "sc_station:Changing speed"
+    #print "sc_station:Changing speed"
     vehicle.setSpeedSetting(curent_speed * speed_multiplier)
     self.waitMsec(1000)
 
 def zwrotnica_test(self, zwrotnica):
-    print "zwrotnica test:"
+    #print "zwrotnica test:"
     if zwrotnica.getKnownState() == 2 : #2 closed
         zwrotnica.setState(4)
         print(zwrotnica.getKnownState())

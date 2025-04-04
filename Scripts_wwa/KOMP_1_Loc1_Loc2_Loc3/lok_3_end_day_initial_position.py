@@ -12,14 +12,14 @@ NumberOfSensors = 16
 SensorsList1 = []
 for i in range(FirstSensorAdress, FirstSensorAdress + NumberOfSensors):
     SensorsList1.append(sensors.getSensor("LS"+str(i+1)))
-print("Sensor List 1:", SensorsList1)
+#print("Sensor List 1:", SensorsList1)
 
 FirstTurnoutAdress = 104
 NumberOfTurnouts = 2
 TurnoutsList_BCD = []
 for i in range(FirstTurnoutAdress, FirstTurnoutAdress + NumberOfTurnouts):
     TurnoutsList_BCD.append(turnouts.getTurnout("LT"+str(i)))
-print("Turnout List 1:", TurnoutsList_BCD)
+#print("Turnout List 1:", TurnoutsList_BCD)
 
 '''
 Jeśli czujniki nie są ułożone w sekwencji, możesz dodać je jako Sensor1 = sensors.getSensor("LS1") lub
@@ -38,15 +38,13 @@ class Lok3EndDay(jmri.jmrit.automat.AbstractAutomaton):
     def init(self):
         # init() is called exactly once at the beginning to do
         # any necessary configuration.
-        print("Inside init(self)")
-
         # get loco address. For long address change "False" to "True"
-        self.throttle1 = self.getThrottle(6, False)  # Tramwaj
+        self.throttle1 = self.getThrottle(11, False)  # Tramwaj
 
 
     def handle(self):
         # handle() is called repeatedly until it returns false.
-        print("Inside handle(self)")
+        print("LOK3 funkcja awaryjna, ustawiam pociagi na pozycje startowe")
         self.throttle1.setSpeedSetting(0)  # Upewnia sie że kolejka jest zatrzymana
         speed_global = 0.4 # Ustawiamy jedną zmienna główną prędkosc
         def turnouts_initial_positions():
@@ -56,19 +54,19 @@ class Lok3EndDay(jmri.jmrit.automat.AbstractAutomaton):
             if TurnoutsList_BCD[0].getKnownState() == 2:
                 TurnoutsList_BCD[0].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
+                print("LOK3 Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
 
             elif TurnoutsList_BCD[1].getKnownState() == 2:
                 TurnoutsList_BCD[1].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[0].getKnownState())
+                print("LOK3 Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[0].getKnownState())
             else:
                 TurnoutsList_BCD[0].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
+                print("LOK3 Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[0], TurnoutsList_BCD[0].getKnownState())
                 TurnoutsList_BCD[1].setState(4)
                 self.waitMsec(1000)
-                print("Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[0].getKnownState())
+                print("LOK3 Przestawiam zwrotnice na THROWN:", TurnoutsList_BCD[1], TurnoutsList_BCD[0].getKnownState())
 
             return 0
 
@@ -76,21 +74,21 @@ class Lok3EndDay(jmri.jmrit.automat.AbstractAutomaton):
         """Funkcja uruchomieniowa - awaryjny dojazd do stacji startowej jezeli pociag na niej sie nie znajduje
         co okolo sekunde uzywa sygnalu dziekowego - jezeli na niej sie znajduje - trabi 3 razy po 2 sekundy"""
         def drive_to_start_station_tram():
-            print("INSIDE DRIVE TO STATION LOK_3_VISLA")
+            print("LOK3 Pociag uruchamiam funkcje powrotu na stacje poczatkowe")
             self.throttle1.setSpeedSetting(0)  # Upewnia sie że kolejka jest zatrzymana
             self.waitMsec(1000)
             if SensorsList1[0] != ACTIVE:
                 Kollib.drive_vehicle(self, self.throttle1, speed_global, False) # Rusza do tylu by wzbudzic pierwszy czujnik
                 while SensorsList1[0].state != ACTIVE:
                     self.waitMsec(100)
-                    self.throttle1.setF2(True)  # run make some noise
+                    self.throttle1.setF0(True)  # wlacz mruganie swiatlami
                     self.waitMsec(1000)
-                    self.throttle1.setF2(False)  # end make some noise
+                    self.throttle1.setF0(False)  # wylacz mruganie swiatlami
                     self.waitMsec(100)
                     if SensorsList1[0].state == ACTIVE:
                         if SensorsList1[1].state != ACTIVE:
                             Kollib.drive_vehicle(self, self.throttle1, 0.0,False)
-                            print("INSIDE DRIVE TO STATION - train arrived to station - end of loop")
+                            print("LOK3 Pociag dojechal na stacje startowa - koniec petli")
                             self.waitMsec(100)
                             self.throttle1.setF1(False)  # wylacz dzwiek silnika
                             self.throttle1.setF0(False)  # zgas światła
@@ -107,19 +105,17 @@ class Lok3EndDay(jmri.jmrit.automat.AbstractAutomaton):
                             self.throttle1.setF2(False)  # end make some noise
                             self.waitMsec(10000)
                             return 0
-                        return 0
-                return 0
 
         """Funkcja wywolujaca funkcje uruchomieniowe dojazdu do stacji startowych"""
         def tram_initial_station_func():
             """Petla odpalajaca powrot do stacji startowej tramwaj"""
             if SensorsList1[0].state != ACTIVE:
                 if SensorsList1[9].state != ACTIVE:
-                    print("Pociag nie na stacji startowej - uruchamiam funkcje jedz do stacji startowej")
+                    print("LOK3 Pociag uruchamiam funkcje powrotu na stacje poczatkowe")
                     turnouts_initial_positions() #sprawdz czy zwrotnice sa przestawione
                     drive_to_start_station_tram() # uruchom program powracajacy na stacje startowe
                     Kollib.drive_vehicle(self, self.throttle1, 0.0, False)
-                    print("Pociag na stacji startowej TRAM_WISLA - Koncze skrypt")
+                    print("LOK3 pociag na stacji startowej - Koncze skrypt")
                     return 0
             else:
                 if SensorsList1[0].state == ACTIVE:
@@ -127,7 +123,7 @@ class Lok3EndDay(jmri.jmrit.automat.AbstractAutomaton):
                         if SensorsList1[9].state != ACTIVE:
                             turnouts_initial_positions()
                             Kollib.drive_vehicle(self, self.throttle1, 0.0, False)
-                            print("INSIDE DRIVE TO STATION - train arrived to station - end of loop")
+                            print("LOK3 Pociag dojechal na stacje startowa - koniec petli")
                             self.throttle1.setF1(False)  # wylacz dzwiek silnika
                             self.throttle1.setF2(True)  # run make some noise
                             self.waitMsec(2000)
@@ -142,14 +138,8 @@ class Lok3EndDay(jmri.jmrit.automat.AbstractAutomaton):
                             self.throttle1.setF2(False)  # end make some noise
                             self.waitMsec(10000)
                             return 0
-                    return 0
-                return 0
 
         tram_initial_station_func()
-
-        print("Pociagi ustawione na stacjach - sprawdz na mapce zajetosc czujnikow i uruchom skrypt wlaczajacy wlasciwy skrypt")
-        print("Sprawdz czy jest wlaczone zasilanie makiety")
-
         return 0
 
 
