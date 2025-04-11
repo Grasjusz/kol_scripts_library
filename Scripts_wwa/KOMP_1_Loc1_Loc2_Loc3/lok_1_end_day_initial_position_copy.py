@@ -34,7 +34,7 @@ class Lok1EndDay(jmri.jmrit.automat.AbstractAutomaton):
         # init() is called exactly once at the beginning to do
         # any necessary configuration.
         # get loco address. For long address change "False" to "True"
-        self.throttle1 = self.getThrottle(6, False) #Tramwaj
+        self.throttle1 = self.getThrottle(10, False) #Tramwaj
         return
 
     def handle(self):

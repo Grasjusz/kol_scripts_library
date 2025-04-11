@@ -53,7 +53,7 @@ class Lok3(jmri.jmrit.automat.AbstractAutomaton):
 
         # get loco address. For long address change "False" to "True"
         self.throttle1 = self.getThrottle(11, False) #Tramwaj
-        #self.throttle2 = self.getThrottle(11, False) #Tramwaj 2
+        #self.throttle2 = self.getThrottle(11, False) #Tramwaj 2 na wahadlo z 1
         return
 
     def handle(self):
